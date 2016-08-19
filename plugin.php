@@ -9,8 +9,15 @@
 *Version 1.0
 */
 
+//Enqueues plugin styles
+function styles(){
+    wp_enqueue_style('plugin-style', plugins_url('style.css', __FILE__));
+}
 
-//Create Widget
+add_action('wp_enqueue_scripts','styles');
+
+
+//Create Widget - referenced thewidget.php file uploaded on slate, the widget we made in class.
 class random_quote extends WP_Widget{
 		//sets it up
 		public function __construct(){
@@ -22,21 +29,21 @@ class random_quote extends WP_Widget{
 		}
 		//html output on webpage
 		public function widget($args, $instance){
-			$title = apply_filters('widget_title', empty($instance['title']) ? 'Random Quote' : $instance['title'], $instance, $this->id_base);
+			$title = apply_filters('widget_title', empty($instance['title']) ? 'Random Quote' :  $instance['title'], $instance, $this->id_base); //if there's no title it shows 'Random Quote'
             
 			echo $args['before_widget'];
 			
 			if($title){
-				echo $args['before_title'] . $title . $args['after_title'];
-			}?>
+				echo $args['before_title'] . $title . $args['after_title']; //shows the title with before_title and after_title defaults
+			}
 				
-				<div id="rquote"><?php do_shortcode('[rquote]')?>
-                </div>
-				<?php  
-					echo $args['after_widget'];
+            do_shortcode('[rquote]'); //shows the shortcode that shows a random quote
+                
+				 
+            echo $args['after_widget'];
 					
 					}
-		//backend forms		
+		//backend forms in the widget dashboard
         public function form($instance){
 				$instance = wp_parse_args((array) $instance, array('title'=>''));
 				$title = strip_tags($instance['title']);?>
@@ -62,19 +69,38 @@ class random_quote extends WP_Widget{
 	
 	add_action('widgets_init',function(){ register_widget('random_quote'); });
             
-//Create Custom Post Type (CPT)
+//Create Custom Post Type (CPT) 
+/*referenced the WP Codex page for register_post_type() and its parameters: *https://codex.wordpress.org/Function_Reference/register_post_type
+*/
 function quote_pt() {
-  register_post_type( 'quotes',
-    array(
-        'labels' => array(
-                        'name' => __( 'Quotes' ),
-                        'singular_name' => __( 'Quote' )),
-        'supports' => ['title', 'editor', 'thumbnail'], //adds featured image option
-                        'public' => true,
-                        'has_archive' => true,
-    )
-  );
-
+    
+    $labels = array(  //adds labels associated with the post type
+                'name'                  => 'Quotes',
+                'singular_name'         => 'Quote',
+                'add_new_item'          => 'Add New Quote',
+                'new_item'              => 'New Quote',
+                'edit_item'             => 'Edit Quote',
+                'view_item'             => 'View Quote',
+                'not_found'             => 'No quotes found',
+                'not_found_in_trash'    => 'No quotes found in trash',
+                'menu_name'             => 'Quotes'       
+        );
+        
+    $args = array(  //adds the post type's functionality through various parameters
+                'labels'                => $labels,
+                'supports'              => array('title', 'editor', 'thumbnail', 'excerpt', 'comments'), 
+                'public'                => true,
+                'has_archive'           => true,
+                'publicly_queryable'    => true,
+                'show_ui'               => true,
+                'can_export'            => true,
+                'rewrite'               => array('slug' => 'quote'),
+                'capability_type'       => 'post',
+                'hierarchical'          => false,
+                'exclude_from_search'   => false
+    );
+    
+  register_post_type( 'quotes', $args);
 }
 
 add_action( 'init', 'quote_pt' );
@@ -83,22 +109,24 @@ add_action( 'init', 'quote_pt' );
 add_shortcode( 'rquote', 'show_quotes' ); //creates a query to loop the custom post type
 
     function show_quotes(){
+
         $args = array(
-            'post_type' => 'quotes',
+            'post_type'   => 'quotes',
             'post_status' => 'publish',
-            'showposts' => '1',
-            'orderby' => 'rand',
-        );
+            'showposts'   => '1',
+            'orderby'     => 'rand'
+        ); //$args will show one random published quote
 
         $query = new WP_Query( $args );
         if( $query->have_posts() ){
 
             while( $query->have_posts() ){
-                $query->the_post();
-                the_post_thumbnail('thumbnail');?>
+                $query->the_post();?>
+                <div id="rquote">
+                    <?php the_post_thumbnail('thumbnail');?>
                 <h4><?php the_title();?></h4>
-                <p><?php the_excerpt();?></p><?php
-            }
+                    <p><?php the_excerpt();?></p></div><?php
+            }//shows the thumbnail, the post's title, and an excerpt of the post filtered by the query
 
         }
         wp_reset_postdata(); 
