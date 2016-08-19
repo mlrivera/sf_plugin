@@ -39,6 +39,13 @@ class random_quote extends WP_Widget{
 				
             do_shortcode('[rquote]'); //shows the shortcode that shows a random quote
                 
+            $message = apply_filters('widget_content', empty($instance['message']) ? 'Have a good day!' :  $instance['message'], $instance, $this->id_base); //if there's no message it shows 'Have a good day!'
+            
+			echo $args['before_widget'];
+			
+			if($message){
+				echo '<div id="qmessage"><p>' . $message . '</p></div>';
+			}
 				 
             echo $args['after_widget'];
 					
@@ -52,14 +59,22 @@ class random_quote extends WP_Widget{
 				    <label for="<?php echo $this->get_field_id('title'); ?>">Title:</label> 
 				    <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
                 </p>
-							
+            <?php
+				$instance = wp_parse_args((array) $instance, array('message'=>''));
+				$message = strip_tags($instance['message']);?>
+
+                <p>
+				    <label for="<?php echo $this->get_field_id('message'); ?>">A Personal Message:</label> 
+				    <input class="widefat" id="<?php echo $this->get_field_id('message'); ?>" name="<?php echo $this->get_field_name('message'); ?>" type="text" value="<?php echo esc_attr($message); ?>" />
+                </p>
             <?php }
 	//updates input
         public function update($new_instance,$old_instance){
 					
 					$instance = $old_instance;
-					$new_instance = wp_parse_args((array) $new_instance, array('title' => ''));
+					$new_instance = wp_parse_args((array) $new_instance, array('title' => '', 'message' => ''));
 					$instance['title'] = strip_tags($new_instance['title']);
+                    $instance['message'] = strip_tags($new_instance['message']); //grabs info that user input into the fields on the widget dashboard and returns the newly saved values for the title and message
 
 					return $instance;
 						
